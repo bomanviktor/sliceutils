@@ -263,6 +263,14 @@ func (sl Slice[T]) Join(sl2 Slice[T], sep ...T) Slice[T] {
 	return append(sl, sl2...)
 }
 
+func (sl Slice[T]) First() T {
+	return sl.Get(0)
+}
+
+func (sl Slice[T]) Last() T {
+	return sl.Get(len(sl) - 1)
+}
+
 func (sl Slice[T]) IndexIs(n int, value T) bool {
 	if n < 0 {
 		for n < 0 {
@@ -274,11 +282,11 @@ func (sl Slice[T]) IndexIs(n int, value T) bool {
 }
 
 func (sl Slice[T]) StartsWith(value T) bool {
-	return sl.Get(0).Eq(value)
+	return sl.First().Eq(value)
 }
 
 func (sl Slice[T]) EndsWith(value T) bool {
-	return sl.Get(len(sl) - 1).Eq(value)
+	return sl.Last().Eq(value)
 }
 
 type E Value[any]
