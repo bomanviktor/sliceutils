@@ -62,21 +62,21 @@ func (sl *Slice[T]) PopN(n int) T {
 	return value
 }
 
-func (sl *Slice[T]) Push(v T) {
+func (sl *Slice[T]) Push(values ...T) {
 	if sl == nil {
 		return
 	}
-	*sl = append(*sl, v)
+	*sl = append(*sl, values...)
 }
 
-func (sl *Slice[T]) PushFront(v T) {
+func (sl *Slice[T]) PushFront(values ...T) {
 	if sl == nil {
 		return
 	}
-	*sl = append(Slice[T]{v}, *sl...)
+	*sl = append(values, *sl...)
 }
 
-func (sl *Slice[T]) PushN(n int, v T) {
+func (sl *Slice[T]) PushN(n int, values ...T) {
 	if sl == nil || len(*sl) < n {
 		return
 	}
@@ -89,11 +89,11 @@ func (sl *Slice[T]) PushN(n int, v T) {
 	}
 	var result Slice[T]
 	if n == len(copy) {
-		result = append(copy, v)
+		result = append(copy, values...)
 	} else {
 		for i, val := range copy {
 			if i == n {
-				result.Push(v)
+				result.Push(values...)
 				result.Push(val)
 			} else {
 				result.Push(val)
