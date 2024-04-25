@@ -306,6 +306,58 @@ func (sl Slice[T]) FlattenAll() Slice[E] {
 	}
 }
 
+func (sl Slice[T]) Split(sep T) Slice[E] {
+	var sp Slice[E]
+	var buf Slice[T]
+	for _, value := range sl {
+		if value.Eq(sep) {
+			sp = append(sp, buf)
+			buf.Clear()
+		} else {
+			buf.Push(value)
+		}
+	}
+	sp = append(sp, buf)
+	return sp
+}
+
+func (sl Slice[T]) SplitOnce(sep T) Slice[E] {
+	var sp Slice[E]
+	var buf Slice[T]
+	for i, value := range sl {
+		if value.Eq(sep) {
+			sp = append(sp, buf)
+			buf.Clear()
+			if i+1 >= len(sl) {
+				return sp
+			}
+			for _, value := range sl[i+1:] {
+				buf.Push(value)
+			}
+			return append(sp, buf)
+		} else {
+			buf.Push(value)
+		}
+	}
+	sp = append(sp, buf)
+	return sp
+}
+
+func (sl Slice[T]) SplitFunc(f func(v T) bool) Slice[E] {
+	var sp Slice[E]
+	var buf Slice[T]
+	for _, value := range sl {
+		if f(value) {
+			sp = append(sp, buf)
+			buf.Clear()
+		} else {
+			buf.Push(value)
+		}
+	}
+	sp = append(sp, buf)
+	return sp
+}
+
 func (sl *Slice[T]) Reverse() {
 	for i, j := 0, len(*sl)-1; i < j; i, j = i+1, j-1 {
 		(*sl)[i], (*sl)[j] = (*sl)[j], (*sl)[i]
