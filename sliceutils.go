@@ -161,6 +161,34 @@ func (sl Slice[T]) IsNested() bool {
 	return reflect.TypeOf(sl[0]).Kind() == reflect.Slice
 }
 
+func (sl Slice[T]) Get(n int) T {
+	if len(sl) < n {
+		return sl.Default()
+	}
+	if n < 0 {
+		for n < 0 {
+			n += len(sl)
+		}
+		n++
+	}
+	return sl[n]
+}
+
+func (sl *Slice[T]) Set(n int, value T) {
+	if len(*sl) < n {
+		return
+	}
+	if n < 0 {
+		for n < 0 {
+			n += len(*sl)
+		}
+		n++
+	}
+	copy := *sl
+	copy[n] = value
+	*sl = copy
+}
+
 type E Eq[any]
 
 func (sl Slice[T]) Flatten() Slice[E] {
