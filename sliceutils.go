@@ -289,102 +289,15 @@ func (sl Slice[T]) EndsWith(value T) bool {
 	return sl.Last().Eq(value)
 }
 
-type E Value[any]
-
-func (sl Slice[T]) Flatten() Slice[E] {
-	var result Slice[E]
-	if sl.IsNested() {
-		for _, v := range sl {
-			nestedSlice := reflect.ValueOf(v)
-			for i := 0; i < nestedSlice.Len(); i++ {
-				result = append(result, nestedSlice.Index(i).Interface().(E))
-			}
-		}
-	} else {
-		for _, v := range sl {
-			result = append(result, v)
-		}
+func (sl Slice[T]) Rev() Slice[T] {
+	var rev Slice[T]
+	for i := len(sl) - 1; i >= 0; i-- {
+		rev.Push(sl[i])
 	}
-	return result
+	return rev
 }
 
-func (sl Slice[T]) FlattenN(n uint) Slice[E] {
-	if !sl.IsNested() || n == 0 {
-		var result Slice[E]
-		for _, v := range sl {
-			result.Push(v)
-		}
-		return result
-	} else {
-		return sl.Flatten().FlattenN(n - 1)
-	}
-}
-
-func (sl Slice[T]) FlattenAll() Slice[E] {
-	if sl.IsNested() {
-		return sl.Flatten().FlattenAll()
-	} else {
-		var result Slice[E]
-		for _, v := range sl {
-			result.Push(v)
-		}
-		return result
-	}
-}
-
-func (sl Slice[T]) Split(sep T) Slice[E] {
-	var sp Slice[E]
-	var buf Slice[T]
-	for _, value := range sl {
-		if value.Eq(sep) {
-			sp = append(sp, buf)
-			buf.Clear()
-		} else {
-			buf.Push(value)
-		}
-	}
-	sp = append(sp, buf)
-	return sp
-}
-
-func (sl Slice[T]) SplitOnce(sep T) Slice[E] {
-	var sp Slice[E]
-	var buf Slice[T]
-	for i, value := range sl {
-		if value.Eq(sep) {
-			sp = append(sp, buf)
-			buf.Clear()
-			if i+1 >= len(sl) {
-				return sp
-			}
-			for _, value := range sl[i+1:] {
-				buf.Push(value)
-			}
-			return append(sp, buf)
-		} else {
-			buf.Push(value)
-		}
-	}
-	sp = append(sp, buf)
-	return sp
-}
-
-func (sl Slice[T]) SplitFunc(f func(v T) bool) Slice[E] {
-	var sp Slice[E]
-	var buf Slice[T]
-	for _, value := range sl {
-		if f(value) {
-			sp = append(sp, buf)
-			buf.Clear()
-		} else {
-			buf.Push(value)
-		}
-	}
-	sp = append(sp, buf)
-	return sp
-}
-
-func (sl *Slice[T]) Reverse() {
+func (sl *Slice[T]) RevMut() {
 	for i, j := 0, len(*sl)-1; i < j; i, j = i+1, j-1 {
 		(*sl)[i], (*sl)[j] = (*sl)[j], (*sl)[i]
 	}
@@ -414,4 +327,115 @@ func (sl *Slice[T]) SortFunc(f func(v1 T, v2 T) bool) {
 		}
 	}
 	*sl = copy
+}
+
+// E is used to convert from Slice[T] to Slice[E]
+type E Value[any]
+
+// All functions below make use of E
+
+func (sl Slice[T]) Flatten() Slice[E] {
+	var result Slice[E]
+	if sl.IsNested() {
+		for _, v := range sl {
+			nestedSlice := reflect.ValueOf(v)
+			for i := 0; i < nestedSlice.Len(); i++ {
+				result = append(result, nestedSlice.Index(i).Interface().(E))
+			}
+		}
+	} else {
+		for _, v := range sl {
+			result = append(result, v)
+		}
+	}
+	return result
+}
+
+func (sl Slice[T]) FlattenN(n uint) Slice[E] {
+	if sl.IsNested() && n > 0 {
+		var result Slice[E]
+		for _, v := range sl {
+			result.Push(v)
+		}
+		return result
+	} else {
+		return sl.Flatten().FlattenN(n - 1)
+	}
+}
+
+func (sl Slice[T]) FlattenAll() Slice[E] {
+	if sl.IsNested() {
+		return sl.Flatten().FlattenAll()
+	} else {
+		var result Slice[E]
+		for _, v := range sl {
+			result.Push(v)
+		}
+		return result
+	}
+}
+
+func (sl Slice[T]) Split(sep T) Slice[E] {
+	var sp Slice[E]
+	var buf Slice[T]
+	if !sl.Contains(sep) {
+		for _, val := range sl {
+			sp.Push(val)
+		}
+		return sp
+	}
+	for _, value := range sl {
+		if value.Eq(sep) {
+			sp = append(sp, buf)
+			buf.Clear()
+		} else {
+			buf.Push(value)
+		}
+	}
+	sp = append(sp, buf)
+	return sp
+}
+
+func (sl Slice[T]) SplitN(n uint, sep T) Slice[E] {
+	if n <= 1 || !sl.Contains(sep) {
+		return sl.Split(sep)
+	}
+	var sp Slice[E]
+	var buf Slice[T]
+	for i, value := range sl {
+		if value.Eq(sep) {
+			sp = append(sp, buf)
+			buf.Clear()
+			n--
+			if n <= 1 {
+				return append(sp, sl[i:])
+			}
+		} else {
+			buf.Push(value)
+		}
+	}
+	sp = append(sp, buf)
+	return sp
+}
+
+func (sl Slice[T]) SplitOnce(sep T) Slice[E] {
+	return sl.SplitN(2, sep)
+}
+
+func (sl Slice[T]) SplitFunc(f func(v T) bool) Slice[E] {
+	var sp Slice[E]
+	var buf Slice[T]
+	for _, value := range sl {
+		if f(value) {
+			sp = append(sp, buf)
+			buf.Clear()
+		} else {
+			buf.Push(value)
+		}
+	}
+	sp = append(sp, buf)
+	if len(sp) == 1 {
+		return sp.Flatten()
+	}
+	return sp
 }
