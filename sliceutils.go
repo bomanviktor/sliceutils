@@ -263,6 +263,24 @@ func (sl Slice[T]) Join(sl2 Slice[T], sep ...T) Slice[T] {
 	return append(sl, sl2...)
 }
 
+func (sl Slice[T]) IndexIs(n int, value T) bool {
+	if n < 0 {
+		for n < 0 {
+			n += len(sl)
+		}
+		n++
+	}
+	return sl.Get(n).Eq(value)
+}
+
+func (sl Slice[T]) StartsWith(value T) bool {
+	return sl.Get(0).Eq(value)
+}
+
+func (sl Slice[T]) EndsWith(value T) bool {
+	return sl.Get(len(sl) - 1).Eq(value)
+}
+
 type E Value[any]
 
 func (sl Slice[T]) Flatten() Slice[E] {
