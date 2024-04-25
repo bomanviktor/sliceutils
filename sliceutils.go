@@ -154,16 +154,6 @@ func (sl Slice[T]) FilterMap(f func(v T) bool, f2 func(v T) T) Slice[T] {
 	return sl.Filter(f).Map(f2)
 }
 
-func isSlice(v any) bool {
-	k := reflect.TypeOf(v).Kind()
-	return k == reflect.Slice
-}
-
-func isArray(v any) bool {
-	k := reflect.TypeOf(v).Kind()
-	return k == reflect.Array
-}
-
 func (sl Slice[T]) IsNested() bool {
 	if len(sl) == 0 {
 		return false
@@ -200,58 +190,28 @@ func (sl *Slice[T]) Dedup() {
 	*sl = seen
 }
 
-func (sl *Slice[T]) FlattenDepth(depth int) {
-	if sl == nil {
-		return
-	}
-	for i := 0; i < depth; i++ {
-		var flattenedSlice Slice[T]
-		flattened := false
-		for _, val := range *sl {
-			switch {
-			case isSlice(val) || isArray(val):
-				flattened = true
-				flattenedSlice = append(flattenedSlice, any(val).(Slice[T])...)
-			default:
-				flattenedSlice = append(flattenedSlice, val)
-			}
+func (sl Slice[T]) FlattenN(n uint) Slice[E] {
+	if !sl.IsNested() || n == 0 {
+		var result Slice[E]
+		for _, v := range sl {
+			result.Push(v)
 		}
-		if !flattened {
-			return
-		}
-		*sl = flattenedSlice
+		return result
+	} else {
+		return sl.Flatten().FlattenN(n - 1)
 	}
 }
 
-func (sl *Slice[T]) FlattenFully() {
-	if sl == nil {
-		return
-	}
-	for {
-		var flattenedSlice Slice[T]
-		flattened := false
-		for _, val := range *sl {
-			switch {
-			case isSlice(val) || isArray(val):
-				flattened = true
-				flattenedSlice = append(flattenedSlice, any(val).(Slice[T])...)
-			default:
-				flattenedSlice = append(flattenedSlice, val)
-			}
+func (sl Slice[T]) FlattenAll() Slice[E] {
+	if sl.IsNested() {
+		return sl.Flatten().FlattenAll()
+	} else {
+		var result Slice[E]
+		for _, v := range sl {
+			result.Push(v)
 		}
-		if !flattened {
-			return
-		}
-		*sl = flattenedSlice
+		return result
 	}
-}
-
-func (sl *Slice[T]) Insert(v T, n int) {
-	if len(*sl) < n {
-		return
-	}
-	rightSide := append(Slice[T]{v}, (*sl)[n:]...)
-	*sl = append((*sl)[:n], rightSide...)
 }
 
 func (sl *Slice[T]) Reverse() {
