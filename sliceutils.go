@@ -4,9 +4,36 @@ import (
 	"reflect"
 )
 
-type Slice[T Eq[any]] []T
+// Type aliases to enable the implementation of Val
+type (
+	Bool bool
+	Str  string
+	Rune rune
+	Int  int
+	I8   int8
+	I16  int16
+	I32  int32
+	I64  int64
+	Uint uint
+	U8   uint8
+	U16  uint16
+	U32  uint32
+	U64  uint64
+	Byte byte
+	F32  float32
+	F64  float64
+	C64  complex64
+	C128 complex128
+)
 
-type Default[T Eq[any]] interface {
+type Val[T any] interface {
+	Eq[T]
+	Ord[T]
+}
+
+type Slice[T Val[any]] []T
+
+type Default[T Val[any]] interface {
 	Default() T
 }
 
@@ -15,7 +42,7 @@ func (sl Slice[T]) Default() T {
 	return out
 }
 
-func New[T Eq[any]](values ...T) Slice[T] {
+func New[T Val[any]](values ...T) Slice[T] {
 	return values
 }
 
@@ -107,7 +134,7 @@ func (sl *Slice[T]) Clear() {
 	*sl = Slice[T]{}
 }
 
-func (sl Slice[T]) Count(v any) int {
+func (sl Slice[T]) Count(v T) int {
 	count := 0
 	for _, val := range sl {
 		if val.Eq(v) {
@@ -189,7 +216,17 @@ func (sl *Slice[T]) Set(n int, value T) {
 	*sl = copy
 }
 
-type E Eq[any]
+func (sl *Slice[T]) Dedup() {
+	seen := Slice[T]{}
+	for _, value := range *sl {
+		if !seen.Contains(value) {
+			seen.Push(value)
+		}
+	}
+	*sl = seen
+}
+
+type E Val[any]
 
 func (sl Slice[T]) Flatten() Slice[E] {
 	var result Slice[E]
@@ -206,16 +243,6 @@ func (sl Slice[T]) Flatten() Slice[E] {
 		}
 	}
 	return result
-}
-
-func (sl *Slice[T]) Dedup() {
-	seen := Slice[T]{}
-	for _, value := range *sl {
-		if !seen.Contains(value) {
-			seen.Push(value)
-		}
-	}
-	*sl = seen
 }
 
 func (sl Slice[T]) FlattenN(n uint) Slice[E] {
@@ -246,4 +273,17 @@ func (sl *Slice[T]) Reverse() {
 	for i, j := 0, len(*sl)-1; i < j; i, j = i+1, j-1 {
 		(*sl)[i], (*sl)[j] = (*sl)[j], (*sl)[i]
 	}
+}
+
+func (sl *Slice[T]) Sort() {
+	copy := *sl
+	for i := 0; i < len(copy)-1; {
+		if copy[i].Gt(copy[i+1]) {
+			copy[i], copy[i+1] = copy[i+1], copy[i]
+			i = 0
+		} else {
+			i++
+		}
+	}
+	*sl = copy
 }

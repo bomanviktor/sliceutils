@@ -1,27 +1,5 @@
 package sliceutils
 
-// Type aliases to enable the implementation of Value on all builtin types
-type (
-	Bool bool
-	Str  string
-	Rune rune
-	Int  int
-	I8   int8
-	I16  int16
-	I32  int32
-	I64  int64
-	Uint uint
-	U8   uint8
-	U16  uint16
-	U32  uint32
-	U64  uint64
-	Byte byte
-	F32  float32
-	F64  float64
-	C64  complex64
-	C128 complex128
-)
-
 // This is the interface you need to implement on your type to be able to put it inside the Slice
 type Eq[T any] interface {
 	Eq(v T) bool
