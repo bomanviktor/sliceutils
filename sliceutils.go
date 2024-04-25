@@ -26,14 +26,14 @@ type (
 	C128 complex128
 )
 
-type Val[T any] interface {
+type Value[T any] interface {
 	Eq[T]
 	Ord[T]
 }
 
-type Slice[T Val[any]] []T
+type Slice[T Value[any]] []T
 
-type Default[T Val[any]] interface {
+type Default[T Value[any]] interface {
 	Default() T
 }
 
@@ -42,7 +42,7 @@ func (sl Slice[T]) Default() T {
 	return out
 }
 
-func New[T Val[any]](values ...T) Slice[T] {
+func New[T Value[any]](values ...T) Slice[T] {
 	return values
 }
 
@@ -134,10 +134,30 @@ func (sl *Slice[T]) Clear() {
 	*sl = Slice[T]{}
 }
 
-func (sl Slice[T]) Count(v T) int {
+func (sl Slice[T]) Count(v any) int {
 	count := 0
 	for _, val := range sl {
 		if val.Eq(v) {
+			count++
+		}
+	}
+	return count
+}
+
+func (sl Slice[T]) DeepCount(v any) int {
+	count := 0
+	for _, val := range sl.FlattenAll() {
+		if val.Eq(v) {
+			count++
+		}
+	}
+	return count
+}
+
+func (sl Slice[T]) CountFunc(f func(T) bool) int {
+	count := 0
+	for _, val := range sl {
+		if f(val) {
 			count++
 		}
 	}
@@ -226,7 +246,7 @@ func (sl *Slice[T]) Dedup() {
 	*sl = seen
 }
 
-type E Val[any]
+type E Value[any]
 
 func (sl Slice[T]) Flatten() Slice[E] {
 	var result Slice[E]
