@@ -76,6 +76,33 @@ func (sl *Slice[T]) PushFront(v T) {
 	*sl = append(Slice[T]{v}, *sl...)
 }
 
+func (sl *Slice[T]) PushN(n int, v T) {
+	if sl == nil || len(*sl) < n {
+		return
+	}
+	copy := *sl
+	if n < 0 {
+		for n < 0 {
+			n += len(copy)
+		}
+		n++
+	}
+	var result Slice[T]
+	if n == len(copy) {
+		result = append(copy, v)
+	} else {
+		for i, val := range copy {
+			if i == n {
+				result.Push(v)
+				result.Push(val)
+			} else {
+				result.Push(val)
+			}
+		}
+	}
+	*sl = result
+}
+
 func (sl *Slice[T]) Clear() {
 	*sl = Slice[T]{}
 }
