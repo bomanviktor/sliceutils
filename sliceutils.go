@@ -246,6 +246,14 @@ func (sl *Slice[T]) Dedup() {
 	*sl = seen
 }
 
+func (sl Slice[T]) Repeat(n uint) Slice[T] {
+	copy := sl
+	for ; n > 1; n-- {
+		sl = append(sl, copy...)
+	}
+	return sl
+}
+
 func (sl Slice[T]) Concat(sl2 Slice[T]) Slice[T] {
 	return append(sl, sl2...)
 }
