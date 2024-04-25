@@ -4,73 +4,99 @@ import (
 	"reflect"
 )
 
-type Slice []any
+type Slice[T Eq[any]] []T
 
-func (sl *Slice) Pop() any {
+type Default[T Eq[any]] interface {
+	Default() T
+}
+
+func (sl Slice[T]) Default() T {
+	var out T
+	return out
+}
+
+func New[T Eq[any]](values ...T) Slice[T] {
+	return values
+}
+
+func (sl *Slice[T]) Pop() T {
 	if len(*sl) == 0 {
-		return nil
+		return sl.Default()
 	}
 	lastIndex := len(*sl) - 1
 	lastElement := (*sl)[lastIndex]
 
 	*sl = (*sl)[:lastIndex]
-
 	return lastElement
 }
 
-func (sl *Slice) PushBack(v any) {
+func (sl *Slice[T]) PopFront() T {
+	if len(*sl) == 0 {
+		return sl.Default()
+	}
+	firstElement := (*sl)[0]
+	if len(*sl) == 1 {
+		*sl = New[T]()
+		return firstElement
+	}
+
+	*sl = (*sl)[1:]
+	return firstElement
+}
+
+func (sl *Slice[T]) Push(v T) {
 	if sl == nil {
 		return
 	}
 	*sl = append(*sl, v)
 }
 
-func (sl *Slice) PushFront(v any) {
+func (sl *Slice[T]) PushFront(v T) {
 	if sl == nil {
 		return
 	}
-	*sl = append(Slice{v}, *sl...)
+	*sl = append(Slice[T]{v}, *sl...)
 }
 
-func (sl *Slice) Clear() {
-	*sl = Slice{}
+func (sl *Slice[T]) Clear() {
+	*sl = Slice[T]{}
 }
 
-func (sl Slice) Count(v any) int {
+func (sl Slice[T]) Count(v any) int {
 	count := 0
 	for _, val := range sl {
-		if val == v {
+		if val.Eq(v) {
 			count++
 		}
 	}
 	return count
 }
 
-func (sl Slice) Contains(v any) bool {
+func (sl Slice[T]) Contains(v any) bool {
 	for _, val := range sl {
-		if val == v {
+		if val.Eq(v) {
 			return true
 		}
 	}
 	return false
 }
 
-func (sl Slice) ForEach(f func(any)) {
+func (sl Slice[T]) ForEach(f func(any)) {
 	for _, v := range sl {
 		f(v)
 	}
 }
 
-func (sl Slice) Map(f func(v any) any) Slice {
-	var mappedSlice Slice
+func (sl Slice[T]) Map(f func(v T) T) Slice[T] {
+	var mappedSlice Slice[T]
 	for _, v := range sl {
 		mappedSlice = append(mappedSlice, f(v))
 	}
 	return mappedSlice
 }
 
-func (sl Slice) Filter(f func(v any) bool) Slice {
-	var filteredSlice Slice
+func (sl Slice[T]) Filter(f func(v T) bool) Slice[T] {
+	var filteredSlice Slice[T]
 	for _, v := range sl {
 		if f(v) {
 			filteredSlice = append(filteredSlice, v)
@@ -79,7 +105,7 @@ func (sl Slice) Filter(f func(v any) bool) Slice {
 	return filteredSlice
 }
 
-func (sl Slice) FilterMap(f func(v any) bool, f2 func(v any) any) Slice {
+func (sl Slice[T]) FilterMap(f func(v T) bool, f2 func(v T) T) Slice[T] {
 	return sl.Filter(f).Map(f2)
 }
 
@@ -93,35 +119,54 @@ func isArray(v any) bool {
 	return k == reflect.Array
 }
 
-func (sl *Slice) Flatten() {
-	if sl == nil {
-		return
+func (sl Slice[T]) IsNested() bool {
+	if len(sl) == 0 {
+		return false
 	}
-	var flattenedSlice Slice
-	for _, val := range *sl {
-		switch {
-		case isSlice(val) || isArray(val):
-			flattenedSlice = append(flattenedSlice, val.(Slice)...)
-		default:
-			flattenedSlice = append(flattenedSlice, val)
-		}
-	}
-
-	*sl = flattenedSlice
+	return reflect.TypeOf(sl[0]).Kind() == reflect.Slice
 }
 
-func (sl *Slice) FlattenDepth(depth int) {
+type E Eq[any]
+
+func (sl Slice[T]) Flatten() Slice[E] {
+	var result Slice[E]
+	if sl.IsNested() {
+		for _, v := range sl {
+			nestedSlice := reflect.ValueOf(v)
+			for i := 0; i < nestedSlice.Len(); i++ {
+				result = append(result, nestedSlice.Index(i).Interface().(E))
+			}
+		}
+	} else {
+		for _, v := range sl {
+			result = append(result, v)
+		}
+	}
+	return result
+}
+
+func (sl *Slice[T]) Dedup() {
+	seen := Slice[T]{}
+	for _, value := range *sl {
+		if !seen.Contains(value) {
+			seen.Push(value)
+		}
+	}
+	*sl = seen
+}
+
+func (sl *Slice[T]) FlattenDepth(depth int) {
 	if sl == nil {
 		return
 	}
 	for i := 0; i < depth; i++ {
-		var flattenedSlice Slice
+		var flattenedSlice Slice[T]
 		flattened := false
 		for _, val := range *sl {
 			switch {
 			case isSlice(val) || isArray(val):
 				flattened = true
-				flattenedSlice = append(flattenedSlice, val.(Slice)...)
+				flattenedSlice = append(flattenedSlice, any(val).(Slice[T])...)
 			default:
 				flattenedSlice = append(flattenedSlice, val)
 			}
@@ -133,18 +178,18 @@ func (sl *Slice) FlattenDepth(depth int) {
 	}
 }
 
-func (sl *Slice) FlattenFully() {
+func (sl *Slice[T]) FlattenFully() {
 	if sl == nil {
 		return
 	}
 	for {
-		var flattenedSlice Slice
+		var flattenedSlice Slice[T]
 		flattened := false
 		for _, val := range *sl {
 			switch {
 			case isSlice(val) || isArray(val):
 				flattened = true
-				flattenedSlice = append(flattenedSlice, val.(Slice)...)
+				flattenedSlice = append(flattenedSlice, any(val).(Slice[T])...)
 			default:
 				flattenedSlice = append(flattenedSlice, val)
 			}
@@ -156,17 +201,16 @@ func (sl *Slice) FlattenFully() {
 	}
 }
 
-func (sl *Slice) Insert(v any, n int) {
-	for len(*sl) < n {
-		*sl = append(*sl, nil) // Safety first bro
+func (sl *Slice[T]) Insert(v T, n int) {
+	if len(*sl) < n {
+		return
 	}
-	rightSide := append(Slice{v}, (*sl)[n:]...)
+	rightSide := append(Slice[T]{v}, (*sl)[n:]...)
 	*sl = append((*sl)[:n], rightSide...)
 }
 
-func (sl *Slice) Reverse() {
+func (sl *Slice[T]) Reverse() {
 	for i, j := 0, len(*sl)-1; i < j; i, j = i+1, j-1 {
 		(*sl)[i], (*sl)[j] = (*sl)[j], (*sl)[i]
 	}
-
 }
