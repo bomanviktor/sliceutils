@@ -20,7 +20,7 @@ func New[T Eq[any]](values ...T) Slice[T] {
 }
 
 func (sl *Slice[T]) Pop() T {
-	if len(*sl) == 0 {
+	if len(*sl) == 0 || sl == nil {
 		return sl.Default()
 	}
 	lastIndex := len(*sl) - 1
@@ -31,7 +31,7 @@ func (sl *Slice[T]) Pop() T {
 }
 
 func (sl *Slice[T]) PopFront() T {
-	if len(*sl) == 0 {
+	if len(*sl) == 0 || sl == nil {
 		return sl.Default()
 	}
 	firstElement := (*sl)[0]
@@ -42,6 +42,24 @@ func (sl *Slice[T]) PopFront() T {
 
 	*sl = (*sl)[1:]
 	return firstElement
+}
+
+func (sl *Slice[T]) PopN(n int) T {
+	if len(*sl) == 0 || len(*sl) < int(n) || sl == nil {
+		return sl.Default()
+	}
+	for n < 0 {
+		n += len(*sl)
+	}
+	copy := *sl
+	value := copy[n]
+	if n == len(copy)-1 {
+		copy = copy[:n]
+	} else {
+		copy = append(copy[:n], copy[n+1:]...)
+	}
+	*sl = copy
+	return value
 }
 
 func (sl *Slice[T]) Push(v T) {
