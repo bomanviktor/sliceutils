@@ -236,6 +236,23 @@ func (sl *Slice[T]) Set(n int, value T) {
 	*sl = copy
 }
 
+func (sl Slice[T]) Replace(n uint, value T) T {
+	i := int(n)
+	if len(sl) < i {
+		return sl.Default()
+	}
+	swappedValue := sl[i]
+	sl[i] = value
+	return swappedValue
+}
+
+func (sl Slice[T]) Swap(x uint, y uint) {
+	if len(sl) < int(x) || len(sl) < int(y) {
+		return
+	}
+	sl[x], sl[y] = sl[y], sl[x]
+}
+
 func (sl *Slice[T]) Dedup() {
 	seen := Slice[T]{}
 	for _, value := range *sl {
