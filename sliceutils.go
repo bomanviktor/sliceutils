@@ -307,3 +307,16 @@ func (sl *Slice[T]) Sort() {
 	}
 	*sl = copy
 }
+
+func (sl *Slice[T]) SortFunc(f func(v1 T, v2 T) bool) {
+	copy := *sl
+	for i := 0; i < len(copy)-1; {
+		if f(copy[i], copy[i+1]) {
+			copy[i], copy[i+1] = copy[i+1], copy[i]
+			i = 0
+		} else {
+			i++
+		}
+	}
+	*sl = copy
+}
