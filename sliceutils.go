@@ -484,6 +484,16 @@ func (sl Slice[T]) Any(f func(v T) bool) bool {
 	return false
 }
 
+func (sl Slice[T]) Enumerate(f func(int, T)) {
+	for i, v := range sl {
+		f(i, v)
+	}
+}
+
+func (sl Slice[T]) Copy() Slice[T] {
+	return New(sl...)
+}
+
 func (sl Slice[T]) Len() int {
 	return len(sl)
 }

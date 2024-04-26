@@ -167,3 +167,9 @@ func (sl Slice[T]) SwapValues(v1, v2 T) {
 		}
 	}
 }
+
+func (sl *Slice[T]) Purge() Slice[T] {
+	copy := New(*sl...)
+	*sl = New[T]()
+	return copy
+}
