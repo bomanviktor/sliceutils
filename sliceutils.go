@@ -47,10 +47,10 @@ func New[T Value[any]](values ...T) Slice[T] {
 }
 
 func (sl *Slice[T]) Pop() T {
-	if len(*sl) == 0 || sl == nil {
+	if sl.IsEmpty() || sl == nil {
 		return sl.Default()
 	}
-	lastIndex := len(*sl) - 1
+	lastIndex := sl.Len() - 1
 	lastElement := (*sl)[lastIndex]
 
 	*sl = (*sl)[:lastIndex]
@@ -58,11 +58,11 @@ func (sl *Slice[T]) Pop() T {
 }
 
 func (sl *Slice[T]) PopFront() T {
-	if len(*sl) == 0 || sl == nil {
+	if sl.IsEmpty() || sl == nil {
 		return sl.Default()
 	}
 	firstElement := (*sl)[0]
-	if len(*sl) == 1 {
+	if sl.Len() == 1 {
 		*sl = New[T]()
 		return firstElement
 	}
@@ -72,15 +72,15 @@ func (sl *Slice[T]) PopFront() T {
 }
 
 func (sl *Slice[T]) PopN(n int) T {
-	if len(*sl) == 0 || len(*sl) < int(n) || sl == nil {
+	if sl.IsEmpty() || sl.Len() < int(n) || sl == nil {
 		return sl.Default()
 	}
 	for n < 0 {
-		n += len(*sl)
+		n += sl.Len()
 	}
 	copy := *sl
 	value := copy[n]
-	if n == len(copy)-1 {
+	if n == copy.Len()-1 {
 		copy = copy[:n]
 	} else {
 		copy = append(copy[:n], copy[n+1:]...)
@@ -104,18 +104,18 @@ func (sl *Slice[T]) PushFront(values ...T) {
 }
 
 func (sl *Slice[T]) PushN(n int, values ...T) {
-	if sl == nil || len(*sl) < n {
+	if sl == nil || sl.Len() < n {
 		return
 	}
 	copy := *sl
 	if n < 0 {
 		for n < 0 {
-			n += len(copy)
+			n += copy.Len()
 		}
 		n++
 	}
 	var result Slice[T]
-	if n == len(copy) {
+	if n == copy.Len() {
 		result = append(copy, values...)
 	} else {
 		for i, val := range copy {
@@ -209,12 +209,12 @@ func (sl Slice[T]) IsNested() bool {
 }
 
 func (sl Slice[T]) Get(n int) T {
-	if len(sl) < n {
+	if sl.Len() < n {
 		return sl.Default()
 	}
 	if n < 0 {
 		for n < 0 {
-			n += len(sl)
+			n += sl.Len()
 		}
 		n++
 	}
@@ -223,7 +223,7 @@ func (sl Slice[T]) Get(n int) T {
 
 func (sl Slice[T]) GetRange(from, to int) Slice[T] {
 	chunk := New[T]()
-	if len(sl) < from || len(sl) < to {
+	if sl.Len() < from || sl.Len() < to {
 		return chunk
 	}
 	for ; from < to; from++ {
@@ -233,12 +233,12 @@ func (sl Slice[T]) GetRange(from, to int) Slice[T] {
 }
 
 func (sl Slice[T]) Set(n int, value T) {
-	if len(sl) < n {
+	if sl.Len() < n {
 		return
 	}
 	if n < 0 {
 		for n < 0 {
-			n += len(sl)
+			n += sl.Len()
 		}
 		n++
 	}
@@ -247,7 +247,7 @@ func (sl Slice[T]) Set(n int, value T) {
 
 func (sl Slice[T]) Replace(n uint, value T) T {
 	i := int(n)
-	if len(sl) < i {
+	if sl.Len() < i {
 		return sl.Default()
 	}
 	swappedValue := sl[i]
@@ -256,7 +256,7 @@ func (sl Slice[T]) Replace(n uint, value T) T {
 }
 
 func (sl Slice[T]) Swap(x uint, y uint) {
-	if len(sl) < int(x) || len(sl) < int(y) {
+	if sl.Len() < int(x) || sl.Len() < int(y) {
 		return
 	}
 	sl[x], sl[y] = sl[y], sl[x]
@@ -294,13 +294,13 @@ func (sl Slice[T]) First() T {
 }
 
 func (sl Slice[T]) Last() T {
-	return sl.Get(len(sl) - 1)
+	return sl.Get(sl.Len() - 1)
 }
 
 func (sl Slice[T]) IndexIs(n int, value T) bool {
 	if n < 0 {
 		for n < 0 {
-			n += len(sl)
+			n += sl.Len()
 		}
 		n++
 	}
@@ -317,21 +317,43 @@ func (sl Slice[T]) EndsWith(value T) bool {
 
 func (sl Slice[T]) Rev() Slice[T] {
 	var rev Slice[T]
-	for i := len(sl) - 1; i >= 0; i-- {
+	for i := sl.Len() - 1; i >= 0; i-- {
 		rev.Push(sl[i])
 	}
 	return rev
 }
 
 func (sl Slice[T]) RevMut() Slice[T] {
-	for i, j := 0, len(sl)-1; i < j; i, j = i+1, j-1 {
+	for i, j := 0, sl.Len()-1; i < j; i, j = i+1, j-1 {
 		sl[i], sl[j] = sl[j], sl[i]
 	}
 	return sl
 }
 
+func (sl Slice[T]) FirstIndexOf(v T) int {
+	for i, value := range sl {
+		if value.Eq(v) {
+			return i
+		}
+	}
+	return -1
+}
+
+func (sl Slice[T]) LastIndexOf(v T) int {
+	for i := sl.Len() - 1; i >= 0; i-- {
+		if sl.Get(i).Eq(v) {
+			return i
+		}
+	}
+	return -1
+}
+
+func (sl Slice[T]) Len() int {
+	return len(sl)
+}
+
 func (sl Slice[T]) Sort() {
-	for i := 0; i < len(sl)-1; {
+	for i := 0; i < sl.Len()-1; {
 		if sl[i].Gt(sl[i+1]) {
 			sl[i], sl[i+1] = sl[i+1], sl[i]
 			i = 0
@@ -342,8 +364,8 @@ func (sl Slice[T]) Sort() {
 }
 
 func (sl Slice[T]) SortBy(f func(v1 T, v2 T) bool) {
-	for i := 0; i < len(sl)-1; {
-		if f(sl[i], sl[i+1]) {
+	for i := 0; i < sl.Len()-1; {
+		if f(sl.Get(i), sl.Get(i+1)) {
 			sl[i], sl[i+1] = sl[i+1], sl[i]
 			i = 0
 		} else {
@@ -353,8 +375,8 @@ func (sl Slice[T]) SortBy(f func(v1 T, v2 T) bool) {
 }
 
 func (sl Slice[T]) IsSorted() bool {
-	for i := 0; i < len(sl)-1; i++ {
-		if sl[i].Lt(sl[i+1]) {
+	for i := 0; i < sl.Len()-1; i++ {
+		if sl.Get(i).Lt(sl.Get(i + 1)) {
 			return false
 		}
 	}
@@ -362,8 +384,8 @@ func (sl Slice[T]) IsSorted() bool {
 }
 
 func (sl Slice[T]) IsSortedBy(f func(v1, v2 T) bool) bool {
-	for i := 0; i < len(sl)-1; i++ {
-		if !f(sl[i], sl[i+1]) {
+	for i := 0; i < sl.Len()-1; i++ {
+		if !f(sl.Get(i), sl.Get(i+1)) {
 			return false
 		}
 	}
@@ -371,29 +393,29 @@ func (sl Slice[T]) IsSortedBy(f func(v1, v2 T) bool) bool {
 }
 
 func (sl Slice[T]) Fill(value T) {
-	for i := 0; i < len(sl)-1; i++ {
+	for i := 0; i < sl.Len()-1; i++ {
 		sl[i] = value
 	}
 }
 
 func (sl Slice[T]) FillWith(f func() T) {
-	for i := 0; i < len(sl)-1; i++ {
+	for i := 0; i < sl.Len()-1; i++ {
 		sl[i] = f()
 	}
 }
 
 func (sl Slice[T]) FillWithDefault(f func() T) {
-	for i := 0; i < len(sl)-1; i++ {
+	for i := 0; i < sl.Len()-1; i++ {
 		sl[i] = sl.Default()
 	}
 }
 
 func (sl Slice[T]) IsEmpty() bool {
-	return len(sl) == 0
+	return sl.Len() == 0
 }
 
 func (sl *Slice[T]) RotateLeft(moves uint) {
-	length := uint(len(*sl))
+	length := uint(sl.Len())
 	if length == 0 || moves == 0 {
 		return
 	}
@@ -404,7 +426,7 @@ func (sl *Slice[T]) RotateLeft(moves uint) {
 }
 
 func (sl *Slice[T]) RotateRight(moves uint) {
-	length := uint(len(*sl))
+	length := uint(sl.Len())
 	if length == 0 || moves == 0 {
 		return
 	}
@@ -429,7 +451,7 @@ func (sl Slice[T]) Flatten() Slice[E] {
 		}
 	} else {
 		for _, v := range sl {
-			result = append(result, v)
+			result.Push(v)
 		}
 	}
 	return result
@@ -470,7 +492,7 @@ func (sl Slice[T]) Split(sep T) Slice[E] {
 	}
 	for _, value := range sl {
 		if value.Eq(sep) {
-			sp = append(sp, buf)
+			sp.Push(buf)
 			buf.Clear()
 		} else {
 			buf.Push(value)
@@ -488,7 +510,7 @@ func (sl Slice[T]) SplitN(n uint, sep T) Slice[E] {
 	var buf Slice[T]
 	for i, value := range sl {
 		if value.Eq(sep) {
-			sp = append(sp, buf)
+			sp.Push(buf)
 			buf.Clear()
 			n--
 			if n <= 1 {
@@ -511,7 +533,7 @@ func (sl Slice[T]) SplitFunc(f func(v T) bool) Slice[E] {
 	var buf Slice[T]
 	for _, value := range sl {
 		if f(value) {
-			sp = append(sp, buf)
+			sp.Push(buf)
 			buf.Clear()
 		} else {
 			buf.Push(value)
@@ -531,16 +553,16 @@ func (sl Slice[T]) Chunk(size uint) Slice[E] {
 	if sl.IsEmpty() {
 		return New[E]()
 	}
-	chunks := make(Slice[E], 0, (uint(len(sl))+size-1)/size)
+	chunks := make(Slice[E], 0, (uint(sl.Len())+size-1)/size)
 	var chunk Slice[T]
 
 	for i, v := range sl {
-		chunk = append(chunk, v)
+		chunk.Push(v)
 
 		// If the chunk size is reached or it's the last element, add the chunk to the result
-		if uint(i+1)%size == 0 || i == len(sl)-1 {
-			chunks = append(chunks, chunk)
-			chunk = make(Slice[T], 0, size)
+		if uint(i+1)%size == 0 || i == sl.Len()-1 {
+			chunks.Push(chunk)
+			chunk.Clear()
 		}
 	}
 	if len(chunks) == 1 {
