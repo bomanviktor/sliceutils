@@ -398,6 +398,28 @@ func (sl Slice[T]) TakeWhile(f func(T) bool) Slice[T] {
 	return sl
 }
 
+func (sl Slice[T]) Zip(other Slice[T]) Slice[T] {
+	zipped := New[T]()
+	if sl.Len() > other.Len() {
+		for i := 0; i < other.Len(); i++ {
+			zipped.Push(sl.Get(i), other.Get(i))
+		}
+		zipped.Push(sl[other.Len():]...)
+		return zipped
+	} else if sl.Len() < other.Len() {
+		for i := 0; i < sl.Len(); i++ {
+			zipped.Push(sl.Get(i), other.Get(i))
+		}
+		zipped.Push(other[sl.Len():]...)
+		return zipped
+	} else {
+		for i := 0; i < sl.Len(); i++ {
+			zipped.Push(sl.Get(i), other.Get(i))
+		}
+		return zipped
+	}
+}
+
 func (sl Slice[T]) Len() int {
 	return len(sl)
 }
