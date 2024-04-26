@@ -473,3 +473,29 @@ func (sl Slice[T]) SplitFunc(f func(v T) bool) Slice[E] {
 	}
 	return sp
 }
+
+func (sl Slice[T]) Chunk(size uint) Slice[E] {
+	if size == 0 {
+		panic("chunk size cannot be 0")
+	}
+	if sl.IsEmpty() {
+		return New[E]()
+	}
+	chunks := make(Slice[E], 0, (uint(len(sl))+size-1)/size)
+	var chunk Slice[T]
+
+	for i, v := range sl {
+		chunk = append(chunk, v)
+
+		// If the chunk size is reached or it's the last element, add the chunk to the result
+		if uint(i+1)%size == 0 || i == len(sl)-1 {
+			chunks = append(chunks, chunk)
+			chunk = make(Slice[T], 0, size)
+		}
+	}
+	if len(chunks) == 1 {
+		return chunks.Flatten()
+	}
+
+	return chunks
+}
