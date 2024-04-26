@@ -291,6 +291,32 @@ func (sl Slice[T]) Join(sl2 Slice[T], sep ...T) Slice[T] {
 	return append(sl, sl2...)
 }
 
+func (sl Slice[T]) Min() T {
+	if sl.IsEmpty() {
+		return sl.Default()
+	}
+	min := sl.First()
+	for _, v := range sl {
+		if v.Lt(min) {
+			min = v
+		}
+	}
+	return min
+}
+
+func (sl Slice[T]) Max() T {
+	if sl.IsEmpty() {
+		return sl.Default()
+	}
+	min := sl.First()
+	for _, v := range sl {
+		if v.Gt(min) {
+			min = v
+		}
+	}
+	return min
+}
+
 func (sl Slice[T]) First() T {
 	return sl.Get(0)
 }
