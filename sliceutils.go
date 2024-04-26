@@ -392,6 +392,27 @@ func (sl Slice[T]) IsEmpty() bool {
 	return len(sl) == 0
 }
 
+func (sl *Slice[T]) RotateLeft(moves uint) {
+	length := uint(len(*sl))
+	if length == 0 || moves == 0 {
+		return
+	}
+
+	copy := *sl
+	moves %= length
+	*sl = append(copy[moves:], copy[:moves]...)
+}
+
+func (sl *Slice[T]) RotateRight(moves uint) {
+	length := uint(len(*sl))
+	if length == 0 || moves == 0 {
+		return
+	}
+	copy := *sl
+	moves %= length
+	*sl = append(copy[length-moves:], copy[:length-moves]...)
+}
+
 // E is used to convert from Slice[T] to Slice[E]
 type E Value[any]
 
