@@ -221,3 +221,7 @@ func (sl Slice[T]) Eq(v any) bool {
 		return false
 	}
 }
+
+func (sl Slice[T]) Ne(v any) bool {
+	return !sl.Eq(v)
+}
