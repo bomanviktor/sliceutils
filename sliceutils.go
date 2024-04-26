@@ -131,7 +131,7 @@ func (sl *Slice[T]) PushN(n int, values ...T) {
 }
 
 func (sl *Slice[T]) Clear() {
-	*sl = Slice[T]{}
+	*sl = New[T]()
 }
 
 func (sl Slice[T]) Count(v any) int {
@@ -202,7 +202,7 @@ func (sl Slice[T]) FilterMap(f func(v T) bool, f2 func(v T) T) Slice[T] {
 }
 
 func (sl Slice[T]) IsNested() bool {
-	if len(sl) == 0 {
+	if sl.IsEmpty() {
 		return false
 	}
 	return reflect.TypeOf(sl[0]).Kind() == reflect.Slice
@@ -221,19 +221,17 @@ func (sl Slice[T]) Get(n int) T {
 	return sl[n]
 }
 
-func (sl *Slice[T]) Set(n int, value T) {
-	if len(*sl) < n {
+func (sl Slice[T]) Set(n int, value T) {
+	if len(sl) < n {
 		return
 	}
 	if n < 0 {
 		for n < 0 {
-			n += len(*sl)
+			n += len(sl)
 		}
 		n++
 	}
-	copy := *sl
-	copy[n] = value
-	*sl = copy
+	sl[n] = value
 }
 
 func (sl Slice[T]) Replace(n uint, value T) T {
@@ -314,36 +312,55 @@ func (sl Slice[T]) Rev() Slice[T] {
 	return rev
 }
 
-func (sl *Slice[T]) RevMut() {
-	for i, j := 0, len(*sl)-1; i < j; i, j = i+1, j-1 {
-		(*sl)[i], (*sl)[j] = (*sl)[j], (*sl)[i]
+func (sl Slice[T]) RevMut() Slice[T] {
+	for i, j := 0, len(sl)-1; i < j; i, j = i+1, j-1 {
+		sl[i], sl[j] = sl[j], sl[i]
 	}
+	return sl
 }
 
-func (sl *Slice[T]) Sort() {
-	copy := *sl
-	for i := 0; i < len(copy)-1; {
-		if copy[i].Gt(copy[i+1]) {
-			copy[i], copy[i+1] = copy[i+1], copy[i]
+func (sl Slice[T]) Sort() {
+	for i := 0; i < len(sl)-1; {
+		if sl[i].Gt(sl[i+1]) {
+			sl[i], sl[i+1] = sl[i+1], sl[i]
 			i = 0
 		} else {
 			i++
 		}
 	}
-	*sl = copy
 }
 
-func (sl *Slice[T]) SortFunc(f func(v1 T, v2 T) bool) {
-	copy := *sl
-	for i := 0; i < len(copy)-1; {
-		if f(copy[i], copy[i+1]) {
-			copy[i], copy[i+1] = copy[i+1], copy[i]
+func (sl Slice[T]) SortFunc(f func(v1 T, v2 T) bool) {
+	for i := 0; i < len(sl)-1; {
+		if f(sl[i], sl[i+1]) {
+			sl[i], sl[i+1] = sl[i+1], sl[i]
 			i = 0
 		} else {
 			i++
 		}
 	}
-	*sl = copy
+}
+
+func (sl Slice[T]) Fill(value T) {
+	for i := 0; i < len(sl)-1; i++ {
+		sl[i] = value
+	}
+}
+
+func (sl Slice[T]) FillWith(f func() T) {
+	for i := 0; i < len(sl)-1; i++ {
+		sl[i] = f()
+	}
+}
+
+func (sl Slice[T]) FillWithDefault(f func() T) {
+	for i := 0; i < len(sl)-1; i++ {
+		sl[i] = sl.Default()
+	}
+}
+
+func (sl Slice[T]) IsEmpty() bool {
+	return len(sl) == 0
 }
 
 // E is used to convert from Slice[T] to Slice[E]
