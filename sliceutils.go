@@ -130,10 +130,6 @@ func (sl *Slice[T]) PushN(n int, values ...T) {
 	*sl = result
 }
 
-func (sl *Slice[T]) Clear() {
-	*sl = New[T]()
-}
-
 func (sl Slice[T]) Count(v any) int {
 	count := 0
 	for _, val := range sl {
@@ -232,52 +228,20 @@ func (sl Slice[T]) GetRange(from, to int) Slice[T] {
 	return chunk
 }
 
-func (sl Slice[T]) Set(n int, value T) {
-	if sl.Len() < n {
-		return
-	}
-	if n < 0 {
-		for n < 0 {
-			n += sl.Len()
-		}
-		n++
-	}
-	sl[n] = value
-}
-
-func (sl Slice[T]) Replace(n uint, value T) T {
-	i := int(n)
-	if sl.Len() < i {
-		return sl.Default()
-	}
-	swappedValue := sl[i]
-	sl[i] = value
-	return swappedValue
-}
-
-func (sl Slice[T]) Swap(x uint, y uint) {
-	if sl.Len() < int(x) || sl.Len() < int(y) {
-		return
-	}
-	sl[x], sl[y] = sl[y], sl[x]
-}
-
-func (sl *Slice[T]) Dedup() {
-	seen := Slice[T]{}
-	for _, value := range *sl {
-		if !seen.Contains(value) {
-			seen.Push(value)
-		}
-	}
-	*sl = seen
-}
-
 func (sl Slice[T]) Repeat(n uint) Slice[T] {
 	copy := sl
 	for ; n > 1; n-- {
 		sl = append(sl, copy...)
 	}
 	return sl
+}
+
+func (sl Slice[T]) Rev() Slice[T] {
+	var rev Slice[T]
+	for i := sl.Len() - 1; i >= 0; i-- {
+		rev.Push(sl[i])
+	}
+	return rev
 }
 
 func (sl Slice[T]) Concat(sl2 Slice[T]) Slice[T] {
@@ -315,21 +279,6 @@ func (sl Slice[T]) EndsWith(value T) bool {
 	return sl.Last().Eq(value)
 }
 
-func (sl Slice[T]) Rev() Slice[T] {
-	var rev Slice[T]
-	for i := sl.Len() - 1; i >= 0; i-- {
-		rev.Push(sl[i])
-	}
-	return rev
-}
-
-func (sl Slice[T]) RevMut() Slice[T] {
-	for i, j := 0, sl.Len()-1; i < j; i, j = i+1, j-1 {
-		sl[i], sl[j] = sl[j], sl[i]
-	}
-	return sl
-}
-
 func (sl Slice[T]) FirstIndexOf(v T) int {
 	for i, value := range sl {
 		if value.Eq(v) {
@@ -352,45 +301,6 @@ func (sl Slice[T]) Len() int {
 	return len(sl)
 }
 
-func (sl Slice[T]) Fill(value T) {
-	for i := 0; i < sl.Len()-1; i++ {
-		sl[i] = value
-	}
-}
-
-func (sl Slice[T]) FillWith(f func() T) {
-	for i := 0; i < sl.Len()-1; i++ {
-		sl[i] = f()
-	}
-}
-
-func (sl Slice[T]) FillWithDefault(f func() T) {
-	for i := 0; i < sl.Len()-1; i++ {
-		sl[i] = sl.Default()
-	}
-}
-
 func (sl Slice[T]) IsEmpty() bool {
 	return sl.Len() == 0
-}
-
-func (sl *Slice[T]) RotateLeft(moves uint) {
-	length := uint(sl.Len())
-	if length == 0 || moves == 0 {
-		return
-	}
-
-	copy := *sl
-	moves %= length
-	*sl = append(copy[moves:], copy[:moves]...)
-}
-
-func (sl *Slice[T]) RotateRight(moves uint) {
-	length := uint(sl.Len())
-	if length == 0 || moves == 0 {
-		return
-	}
-	copy := *sl
-	moves %= length
-	*sl = append(copy[length-moves:], copy[:length-moves]...)
 }
