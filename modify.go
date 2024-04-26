@@ -30,7 +30,7 @@ func (sl *Slice[T]) Dedup() {
 //
 //	[1,2,3]Fill(1) return [1,1,1]
 func (sl Slice[T]) Fill(value T) {
-	for i := 0; i < sl.Len()-1; i++ {
+	for i := 0; i < sl.Len(); i++ {
 		sl[i] = value
 	}
 }
