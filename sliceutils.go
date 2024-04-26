@@ -343,6 +343,29 @@ func (sl Slice[T]) AllIndexesOf(value T) Slice[Int] {
 	return indexes
 }
 
+type V Value[any]
+
+func (sl Slice[T]) Fold(init V, f func(V, T) V) V {
+	for _, v := range sl {
+		init = f(init, v)
+	}
+	return init
+}
+
+func (sl Slice[T]) Reduce(f func(T, T) T) T {
+	if sl.IsEmpty() {
+		return sl.Default()
+	}
+	acc := sl.First()
+	if sl.Len() == 1 {
+		return acc
+	}
+	for _, v := range sl[1:] {
+		acc = f(acc, v)
+	}
+	return acc
+}
+
 func (sl Slice[T]) Len() int {
 	return len(sl)
 }
