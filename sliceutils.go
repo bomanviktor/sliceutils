@@ -71,7 +71,7 @@ func (sl *Slice[T]) PopFront() T {
 	return firstElement
 }
 
-func (sl *Slice[T]) PopN(n int) T {
+func (sl *Slice[T]) Take(n int) T {
 	if sl.IsEmpty() || sl.Len() < int(n) || sl == nil {
 		return sl.Default()
 	}
@@ -103,7 +103,7 @@ func (sl *Slice[T]) PushFront(values ...T) {
 	*sl = append(values, *sl...)
 }
 
-func (sl *Slice[T]) PushN(n int, values ...T) {
+func (sl *Slice[T]) Insert(n int, values ...T) {
 	if sl == nil || sl.Len() < n {
 		return
 	}
@@ -167,6 +167,24 @@ func (sl Slice[T]) Contains(v any) bool {
 		}
 	}
 	return false
+}
+
+func (sl Slice[T]) ContainsMany(v ...any) bool {
+	for _, val := range v {
+		if !sl.Contains(val) {
+			return false
+		}
+	}
+	return true
+}
+
+func (sl Slice[T]) ContainsAll(v any) bool {
+	for _, val := range sl {
+		if !val.Eq(v) {
+			return false
+		}
+	}
+	return true
 }
 
 func (sl Slice[T]) ForEach(f func(any)) {
