@@ -297,6 +297,24 @@ func (sl Slice[T]) EndsWith(value T) bool {
 	return sl.Last().Eq(value)
 }
 
+func (sl Slice[T]) Find(f func(v T) bool) *T {
+	for _, v := range sl {
+		if f(v) {
+			return &v
+		}
+	}
+	return nil
+}
+
+func (sl Slice[T]) FindMap(f func(v T) *T) *T {
+	for _, v := range sl {
+		if f(v) != nil {
+			return &v
+		}
+	}
+	return nil
+}
+
 func (sl Slice[T]) FirstIndexOf(v T) int {
 	for i, value := range sl {
 		if value.Eq(v) {
