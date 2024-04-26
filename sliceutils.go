@@ -196,7 +196,7 @@ func (sl Slice[T]) ForEach(f func(any)) {
 func (sl Slice[T]) Map(f func(v T) T) Slice[T] {
 	var mappedSlice Slice[T]
 	for _, v := range sl {
-		mappedSlice = append(mappedSlice, f(v))
+		mappedSlice.Push(f(v))
 	}
 	return mappedSlice
 }
@@ -418,6 +418,24 @@ func (sl Slice[T]) Zip(other Slice[T]) Slice[T] {
 		}
 		return zipped
 	}
+}
+
+func (sl Slice[T]) All(f func(v T) bool) bool {
+	for _, v := range sl {
+		if !f(v) {
+			return false
+		}
+	}
+	return true
+}
+
+func (sl Slice[T]) Any(f func(v T) bool) bool {
+	for _, v := range sl {
+		if f(v) {
+			return true
+		}
+	}
+	return false
 }
 
 func (sl Slice[T]) Len() int {
