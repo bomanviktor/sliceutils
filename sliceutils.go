@@ -553,7 +553,7 @@ func (sl Slice[T]) Chunk(size uint) Slice[E] {
 	if sl.IsEmpty() {
 		return New[E]()
 	}
-	chunks := make(Slice[E], 0, (uint(sl.Len())+size-1)/size)
+	chunks := New[E]()
 	var chunk Slice[T]
 
 	for i, v := range sl {
@@ -570,4 +570,21 @@ func (sl Slice[T]) Chunk(size uint) Slice[E] {
 	}
 
 	return chunks
+}
+
+func (sl Slice[T]) Windows(size uint) Slice[E] {
+	if size == 0 {
+		panic("size of windows cannot be 0")
+	}
+	var windows Slice[E]
+	if sl.Len() < int(size) {
+		for _, value := range sl {
+			windows.Push(value)
+		}
+		return windows
+	}
+	for i := 0; i < sl.Len()-int(size)+1; i++ {
+		windows.Push(sl[i : i+int(size)])
+	}
+	return windows
 }
