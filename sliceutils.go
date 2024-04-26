@@ -201,6 +201,18 @@ func (sl Slice[T]) Map(f func(v T) T) Slice[T] {
 	return mappedSlice
 }
 
+func (sl Slice[T]) MapWhile(f func(v T) *T) Slice[T] {
+	var mappedSlice Slice[T]
+	for _, v := range sl {
+		if f(v) != nil {
+			mappedSlice.Push(*f(v))
+		} else {
+			mappedSlice.Push(v)
+		}
+	}
+	return mappedSlice
+}
+
 func (sl Slice[T]) Filter(f func(v T) bool) Slice[T] {
 	var filteredSlice Slice[T]
 	for _, v := range sl {
