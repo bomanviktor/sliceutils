@@ -63,6 +63,14 @@ func (sl Slice[T]) FlattenAll() Slice[E] {
 	}
 }
 
+func (sl Slice[T]) FlatMap(f func(v T) T) Slice[E] {
+	mapped := New[T]()
+	for _, v := range sl {
+		mapped.Push(f(v))
+	}
+	return mapped.Flatten()
+}
+
 // # Split
 //
 //	Split the slice based on separator sep.
