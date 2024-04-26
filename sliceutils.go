@@ -4,7 +4,7 @@ import (
 	"reflect"
 )
 
-// Type aliases to enable the implementation of Val
+// Type aliases to enable the implementation of Value for the builtin types
 type (
 	Bool bool
 	Str  string
@@ -295,6 +295,16 @@ func (sl Slice[T]) LastIndexOf(v T) int {
 		}
 	}
 	return -1
+}
+
+func (sl Slice[T]) AllIndexesOf(value T) Slice[Int] {
+	indexes := New[Int]()
+	for i, v := range sl {
+		if v.Eq(value) {
+			indexes.Push(Int(i))
+		}
+	}
+	return indexes
 }
 
 func (sl Slice[T]) Len() int {
