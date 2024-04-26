@@ -213,6 +213,14 @@ func (sl Slice[T]) MapWhile(f func(v T) *T) Slice[T] {
 	return mappedSlice
 }
 
+func (sl Slice[T]) StepBy(n uint) Slice[T] {
+	step := New[T]()
+	for i := 0; i < sl.Len(); i += int(n) {
+		step.Push(sl.Get(i))
+	}
+	return step
+}
+
 func (sl Slice[T]) Filter(f func(v T) bool) Slice[T] {
 	var filteredSlice Slice[T]
 	for _, v := range sl {
