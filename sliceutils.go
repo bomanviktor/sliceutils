@@ -187,6 +187,18 @@ func (sl Slice[T]) ContainsAll(v any) bool {
 	return true
 }
 
+func (sl Slice[T]) IsPrefixOf(other Slice[T]) bool {
+	if sl.Len() >= other.Len() {
+		return false
+	}
+	for i := 0; i < sl.Len(); i++ {
+		if !sl.Get(i).Eq(other.Get(i)) {
+			return false
+		}
+	}
+	return true
+}
+
 func (sl Slice[T]) ForEach(f func(any)) {
 	for _, v := range sl {
 		f(v)
@@ -315,6 +327,16 @@ func (sl Slice[T]) Max() T {
 		}
 	}
 	return min
+}
+
+func (sl Slice[T]) MaxBy(f func(T) T) T {
+	max := sl.Default()
+	for _, v := range sl {
+		if f(v).Gt(max) {
+			max = v
+		}
+	}
+	return max
 }
 
 func (sl Slice[T]) First() T {

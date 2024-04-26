@@ -13,6 +13,37 @@ type Ord[T any] interface {
 	Lt(v2 T) bool
 }
 
+func (sl Slice[T]) Compare(other Slice[T]) Ordering {
+	if sl.IsEmpty() && other.IsEmpty() {
+		return Equal
+	}
+	if sl.IsEmpty() && !other.IsEmpty() {
+		return Less
+	}
+	if !sl.IsEmpty() && other.IsEmpty() {
+		return Greater
+	}
+
+	if sl.IsPrefixOf(other) {
+		return Less
+	}
+
+	if other.IsPrefixOf(sl) {
+		return Greater
+	}
+	for i := 0; i < sl.Len(); i++ {
+		v1, v2 := sl.Get(i), other.Get(i)
+		if v1.Gt(v2) {
+			return Greater
+		}
+		if v1.Lt(v2) {
+			return Less
+		}
+	}
+
+	return Equal
+}
+
 func (sl Slice[T]) Gt(other any) bool {
 	switch other := other.(type) {
 	case Slice[T]:
