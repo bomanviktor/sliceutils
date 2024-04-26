@@ -71,7 +71,7 @@ func (sl *Slice[T]) PopFront() T {
 	return firstElement
 }
 
-func (sl *Slice[T]) Take(n int) T {
+func (sl *Slice[T]) PopN(n int) T {
 	if sl.IsEmpty() || sl.Len() < int(n) || sl == nil {
 		return sl.Default()
 	}
@@ -364,6 +364,38 @@ func (sl Slice[T]) Reduce(f func(T, T) T) T {
 		acc = f(acc, v)
 	}
 	return acc
+}
+
+func (sl Slice[T]) Skip(n uint) Slice[T] {
+	if sl.Len() < int(n) {
+		return New[T]()
+	}
+	return sl[n:]
+}
+
+func (sl Slice[T]) SkipWhile(f func(T) bool) Slice[T] {
+	for i, v := range sl {
+		if !f(v) {
+			return sl[i:]
+		}
+	}
+	return sl
+}
+
+func (sl Slice[T]) Take(n uint) Slice[T] {
+	if sl.Len() < int(n) {
+		return sl
+	}
+	return sl[:n]
+}
+
+func (sl Slice[T]) TakeWhile(f func(T) bool) Slice[T] {
+	for i, v := range sl {
+		if !f(v) {
+			return sl[:i]
+		}
+	}
+	return sl
 }
 
 func (sl Slice[T]) Len() int {
