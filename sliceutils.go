@@ -221,6 +221,17 @@ func (sl Slice[T]) Get(n int) T {
 	return sl[n]
 }
 
+func (sl Slice[T]) GetRange(from, to int) Slice[T] {
+	chunk := New[T]()
+	if len(sl) < from || len(sl) < to {
+		return chunk
+	}
+	for ; from < to; from++ {
+		chunk.Push(sl.Get(from))
+	}
+	return chunk
+}
+
 func (sl Slice[T]) Set(n int, value T) {
 	if len(sl) < n {
 		return
@@ -330,7 +341,7 @@ func (sl Slice[T]) Sort() {
 	}
 }
 
-func (sl Slice[T]) SortFunc(f func(v1 T, v2 T) bool) {
+func (sl Slice[T]) SortBy(f func(v1 T, v2 T) bool) {
 	for i := 0; i < len(sl)-1; {
 		if f(sl[i], sl[i+1]) {
 			sl[i], sl[i+1] = sl[i+1], sl[i]
@@ -339,6 +350,24 @@ func (sl Slice[T]) SortFunc(f func(v1 T, v2 T) bool) {
 			i++
 		}
 	}
+}
+
+func (sl Slice[T]) IsSorted() bool {
+	for i := 0; i < len(sl)-1; i++ {
+		if sl[i].Lt(sl[i+1]) {
+			return false
+		}
+	}
+	return true
+}
+
+func (sl Slice[T]) IsSortedBy(f func(v1, v2 T) bool) bool {
+	for i := 0; i < len(sl)-1; i++ {
+		if !f(sl[i], sl[i+1]) {
+			return false
+		}
+	}
+	return true
 }
 
 func (sl Slice[T]) Fill(value T) {
