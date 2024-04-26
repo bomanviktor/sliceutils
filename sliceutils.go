@@ -572,6 +572,30 @@ func (sl Slice[T]) Chunk(size uint) Slice[E] {
 	return chunks
 }
 
+func (sl Slice[T]) ChunkBy(f func(T, T) bool) Slice[E] {
+	if sl.IsEmpty() {
+		return New[E]()
+	}
+
+	chunks := New[E]()
+	var chunk Slice[T]
+
+	for i, v := range sl {
+		if i > 0 && !f(sl.Get(i-1), v) {
+			chunks.Push(chunk)
+			chunk.Clear()
+		}
+		chunk.Push(v)
+	}
+	chunks.Push(chunk)
+
+	if len(chunks) == 1 {
+		return chunks.Flatten()
+	}
+
+	return chunks
+}
+
 func (sl Slice[T]) Windows(size uint) Slice[E] {
 	if size == 0 {
 		panic("size of windows cannot be 0")
