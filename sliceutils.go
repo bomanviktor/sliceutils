@@ -1,6 +1,7 @@
 package sliceutils
 
 import (
+	"errors"
 	"reflect"
 )
 
@@ -26,6 +27,13 @@ type (
 	C128 complex128
 )
 
+var (
+	ErrDoesNotExist = errors.New("value does not exist in slice")
+	ErrIsEmpty      = errors.New("slice is empty")
+	ErrIsNil        = errors.New("slice is nil")
+	ErrOutOfRange   = errors.New("index is out of range")
+)
+
 type Value[T any] interface {
 	Eq[T]
 	Ord[T]
@@ -46,15 +54,18 @@ func New[T Value[any]](values ...T) Slice[T] {
 	return values
 }
 
-func (sl *Slice[T]) Pop() T {
-	if sl.IsEmpty() || sl == nil {
-		return sl.Default()
+func (sl *Slice[T]) Pop() (T, error) {
+	if sl.IsEmpty() {
+		return sl.Default(), ErrIsEmpty
+	}
+	if sl == nil {
+		return sl.Default(), ErrIsNil
 	}
 	lastIndex := sl.Len() - 1
 	lastElement := (*sl)[lastIndex]
 
 	*sl = (*sl)[:lastIndex]
-	return lastElement
+	return lastElement, nil
 }
 
 func (sl *Slice[T]) PopFront() T {
@@ -71,22 +82,26 @@ func (sl *Slice[T]) PopFront() T {
 	return firstElement
 }
 
-func (sl *Slice[T]) PopN(n int) T {
-	if sl.IsEmpty() || sl.Len() < int(n) || sl == nil {
-		return sl.Default()
+func (sl *Slice[T]) Remove(n uint) (T, error) {
+	if sl.IsEmpty() {
+		return sl.Default(), ErrIsEmpty
 	}
-	for n < 0 {
-		n += sl.Len()
+
+	if sl.Len() < int(n) {
+		return sl.Default(), ErrOutOfRange
+	}
+	if sl == nil {
+		return sl.Default(), ErrIsNil
 	}
 	copy := *sl
 	value := copy[n]
-	if n == copy.Len()-1 {
+	if int(n) == copy.Len()-1 {
 		copy = copy[:n]
 	} else {
 		copy = append(copy[:n], copy[n+1:]...)
 	}
 	*sl = copy
-	return value
+	return value, nil
 }
 
 func (sl *Slice[T]) Push(values ...T) {
@@ -103,9 +118,9 @@ func (sl *Slice[T]) PushFront(values ...T) {
 	*sl = append(values, *sl...)
 }
 
-func (sl *Slice[T]) Insert(n int, values ...T) {
+func (sl *Slice[T]) Insert(n int, values ...T) error {
 	if sl == nil || sl.Len() < n {
-		return
+		return ErrOutOfRange
 	}
 	copy := *sl
 	if n < 0 {
@@ -128,6 +143,7 @@ func (sl *Slice[T]) Insert(n int, values ...T) {
 		}
 	}
 	*sl = result
+	return nil
 }
 
 func (sl Slice[T]) Count(v any) int {
@@ -192,14 +208,14 @@ func (sl Slice[T]) IsPrefixOf(other Slice[T]) bool {
 		return false
 	}
 	for i := 0; i < sl.Len(); i++ {
-		if !sl.Get(i).Eq(other.Get(i)) {
+		if !sl[i].Eq(other[i]) {
 			return false
 		}
 	}
 	return true
 }
 
-func (sl Slice[T]) ForEach(f func(any)) {
+func (sl Slice[T]) ForEach(f func(T)) {
 	for _, v := range sl {
 		f(v)
 	}
@@ -228,7 +244,7 @@ func (sl Slice[T]) MapWhile(f func(v T) *T) Slice[T] {
 func (sl Slice[T]) StepBy(n uint) Slice[T] {
 	step := New[T]()
 	for i := 0; i < sl.Len(); i += int(n) {
-		step.Push(sl.Get(i))
+		step.Push(sl[i])
 	}
 	return step
 }
@@ -254,9 +270,12 @@ func (sl Slice[T]) IsNested() bool {
 	return reflect.TypeOf(sl[0]).Kind() == reflect.Slice
 }
 
-func (sl Slice[T]) Get(n int) T {
+func (sl Slice[T]) Get(n int) (T, error) {
+	if sl.IsEmpty() {
+		return sl.Default(), ErrIsEmpty
+	}
 	if sl.Len() < n {
-		return sl.Default()
+		return sl.Default(), ErrOutOfRange
 	}
 	if n < 0 {
 		for n < 0 {
@@ -264,18 +283,21 @@ func (sl Slice[T]) Get(n int) T {
 		}
 		n++
 	}
-	return sl[n]
+	return sl[n], nil
 }
 
-func (sl Slice[T]) GetRange(from, to int) Slice[T] {
-	chunk := New[T]()
+func (sl Slice[T]) GetRange(from, to int) (Slice[T], error) {
+	r := New[T]()
+	if sl.IsEmpty() {
+		return r, ErrIsEmpty
+	}
 	if sl.Len() < from || sl.Len() < to {
-		return chunk
+		return r, ErrOutOfRange
 	}
 	for ; from < to; from++ {
-		chunk.Push(sl.Get(from))
+		r.Push(sl[from])
 	}
-	return chunk
+	return r, nil
 }
 
 func (sl Slice[T]) Repeat(n uint) Slice[T] {
@@ -286,7 +308,7 @@ func (sl Slice[T]) Repeat(n uint) Slice[T] {
 	return sl
 }
 
-func (sl Slice[T]) Rev() Slice[T] {
+func (sl Slice[T]) Reverse() Slice[T] {
 	var rev Slice[T]
 	for i := sl.Len() - 1; i >= 0; i-- {
 		rev.Push(sl[i])
@@ -303,47 +325,44 @@ func (sl Slice[T]) Join(sl2 Slice[T], sep ...T) Slice[T] {
 	return append(sl, sl2...)
 }
 
-func (sl Slice[T]) Min() T {
-	if sl.IsEmpty() {
-		return sl.Default()
-	}
-	min := sl.First()
+func (sl Slice[T]) Min() (T, error) {
+	min, err := sl.First()
 	for _, v := range sl {
 		if v.Lt(min) {
 			min = v
 		}
 	}
-	return min
+	return min, err
 }
 
-func (sl Slice[T]) Max() T {
-	if sl.IsEmpty() {
-		return sl.Default()
-	}
-	min := sl.First()
+func (sl Slice[T]) Max() (T, error) {
+	min, err := sl.First()
 	for _, v := range sl {
 		if v.Gt(min) {
 			min = v
 		}
 	}
-	return min
+	return min, err
 }
 
-func (sl Slice[T]) MaxBy(f func(T) T) T {
+func (sl Slice[T]) MaxBy(f func(T) T) (T, error) {
+	if sl.IsEmpty() {
+		return sl.Default(), ErrIsEmpty
+	}
 	max := sl.Default()
 	for _, v := range sl {
 		if f(v).Gt(max) {
 			max = v
 		}
 	}
-	return max
+	return max, nil
 }
 
-func (sl Slice[T]) First() T {
+func (sl Slice[T]) First() (T, error) {
 	return sl.Get(0)
 }
 
-func (sl Slice[T]) Last() T {
+func (sl Slice[T]) Last() (T, error) {
 	return sl.Get(sl.Len() - 1)
 }
 
@@ -354,61 +373,72 @@ func (sl Slice[T]) IndexIs(n int, value T) bool {
 		}
 		n++
 	}
-	return sl.Get(n).Eq(value)
+	return sl[n].Eq(value)
 }
 
-func (sl Slice[T]) StartsWith(value T) bool {
-	return sl.First().Eq(value)
+func (sl Slice[T]) StartsWith(value T) (bool, error) {
+	if firstValue, err := sl.First(); err != nil {
+		return false, err
+	} else {
+		return firstValue.Eq(value), nil
+	}
 }
 
-func (sl Slice[T]) EndsWith(value T) bool {
-	return sl.Last().Eq(value)
+func (sl Slice[T]) EndsWith(value T) (bool, error) {
+	if lastValue, err := sl.Last(); err != nil {
+		return false, err
+	} else {
+		return lastValue.Eq(value), nil
+	}
 }
 
-func (sl Slice[T]) Find(f func(v T) bool) *T {
+func (sl Slice[T]) Find(f func(v T) bool) (T, error) {
 	for _, v := range sl {
 		if f(v) {
-			return &v
+			return v, nil
 		}
 	}
-	return nil
+	return sl.Default(), ErrDoesNotExist
 }
 
-func (sl Slice[T]) FindMap(f func(v T) *T) *T {
+func (sl Slice[T]) FindMap(f func(v T) *T) (T, error) {
 	for _, v := range sl {
 		if f(v) != nil {
-			return &v
+			return v, nil
 		}
 	}
-	return nil
+	return sl.Default(), ErrDoesNotExist
 }
 
-func (sl Slice[T]) FirstIndexOf(v T) int {
+func (sl Slice[T]) FirstIndexOf(v T) (int, error) {
 	for i, value := range sl {
 		if value.Eq(v) {
-			return i
+			return i, nil
 		}
 	}
-	return -1
+	return -1, ErrDoesNotExist
 }
 
-func (sl Slice[T]) LastIndexOf(v T) int {
+func (sl Slice[T]) LastIndexOf(v T) (int, error) {
 	for i := sl.Len() - 1; i >= 0; i-- {
-		if sl.Get(i).Eq(v) {
-			return i
+		if sl[i].Eq(v) {
+			return i, nil
 		}
 	}
-	return -1
+	return -1, ErrDoesNotExist
 }
 
-func (sl Slice[T]) AllIndexesOf(value T) Slice[Int] {
+func (sl Slice[T]) AllIndexesOf(value T) (Slice[Int], error) {
 	indexes := New[Int]()
+	if !sl.Contains(value) {
+		return indexes, ErrDoesNotExist
+	}
 	for i, v := range sl {
 		if v.Eq(value) {
 			indexes.Push(Int(i))
 		}
 	}
-	return indexes
+	return indexes, nil
 }
 
 type V Value[any]
@@ -420,18 +450,12 @@ func (sl Slice[T]) Fold(init V, f func(V, T) V) V {
 	return init
 }
 
-func (sl Slice[T]) Reduce(f func(T, T) T) T {
-	if sl.IsEmpty() {
-		return sl.Default()
-	}
-	acc := sl.First()
-	if sl.Len() == 1 {
-		return acc
-	}
-	for _, v := range sl[1:] {
+func (sl Slice[T]) Reduce(f func(acc, v T) T) (T, error) {
+	acc, err := sl.First()
+	for _, v := range sl.Skip(1) {
 		acc = f(acc, v)
 	}
-	return acc
+	return acc, err
 }
 
 func (sl Slice[T]) Skip(n uint) Slice[T] {
@@ -470,19 +494,19 @@ func (sl Slice[T]) Zip(other Slice[T]) Slice[T] {
 	zipped := New[T]()
 	if sl.Len() > other.Len() {
 		for i := 0; i < other.Len(); i++ {
-			zipped.Push(sl.Get(i), other.Get(i))
+			zipped.Push(sl[i], other[i])
 		}
 		zipped.Push(sl[other.Len():]...)
 		return zipped
 	} else if sl.Len() < other.Len() {
 		for i := 0; i < sl.Len(); i++ {
-			zipped.Push(sl.Get(i), other.Get(i))
+			zipped.Push(sl[i], other[i])
 		}
 		zipped.Push(other[sl.Len():]...)
 		return zipped
 	} else {
 		for i := 0; i < sl.Len(); i++ {
-			zipped.Push(sl.Get(i), other.Get(i))
+			zipped.Push(sl[i], other[i])
 		}
 		return zipped
 	}

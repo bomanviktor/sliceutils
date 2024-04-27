@@ -72,12 +72,12 @@ func (sl Slice[T]) Replace(n uint, value T) T {
 	return swappedValue
 }
 
-// # RevMut
+// # ReverseMut
 //
 // Reverse the slice and return the result
 //
 //	[1,2,3]RevMut() -> [3,2,1] and return [3,2,1]
-func (sl Slice[T]) RevMut() Slice[T] {
+func (sl Slice[T]) ReverseMut() Slice[T] {
 	for i, j := 0, sl.Len()-1; i < j; i, j = i+1, j-1 {
 		sl[i], sl[j] = sl[j], sl[i]
 	}

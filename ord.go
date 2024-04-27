@@ -17,12 +17,6 @@ func (sl Slice[T]) Compare(other Slice[T]) Ordering {
 	if sl.IsEmpty() && other.IsEmpty() {
 		return Equal
 	}
-	if sl.IsEmpty() && !other.IsEmpty() {
-		return Less
-	}
-	if !sl.IsEmpty() && other.IsEmpty() {
-		return Greater
-	}
 
 	if sl.IsPrefixOf(other) {
 		return Less
@@ -31,8 +25,9 @@ func (sl Slice[T]) Compare(other Slice[T]) Ordering {
 	if other.IsPrefixOf(sl) {
 		return Greater
 	}
+
 	for i := 0; i < sl.Len(); i++ {
-		v1, v2 := sl.Get(i), other.Get(i)
+		v1, v2 := sl[i], other[i]
 		if v1.Gt(v2) {
 			return Greater
 		}

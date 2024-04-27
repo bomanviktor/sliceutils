@@ -89,7 +89,7 @@ func (sl Slice[T]) SortBy(f func(v1 T, v2 T) bool) {
 //	[3,2,1]IsSorted() return false
 func (sl Slice[T]) IsSorted() bool {
 	for i := 0; i < sl.Len()-1; i++ {
-		if sl.Get(i).Lt(sl.Get(i + 1)) {
+		if sl[i].Lt(sl[i+1]) {
 			return false
 		}
 	}
@@ -104,7 +104,7 @@ func (sl Slice[T]) IsSorted() bool {
 //	[1,2,3]IsSortedBy(func(v1 == v2 - 2)) return false
 func (sl Slice[T]) IsSortedBy(f func(v1, v2 T) bool) bool {
 	for i := 0; i < sl.Len()-1; i++ {
-		if !f(sl.Get(i), sl.Get(i+1)) {
+		if !f(sl[i], sl[i+1]) {
 			return false
 		}
 	}

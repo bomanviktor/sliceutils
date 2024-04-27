@@ -207,7 +207,7 @@ func (sl Slice[T]) ChunkBy(f func(T, T) bool) Slice[E] {
 	var chunk Slice[T]
 
 	for i, v := range sl {
-		if i > 0 && !f(sl.Get(i-1), v) {
+		if i > 0 && !f(sl[i-1], v) {
 			chunks.Push(chunk)
 			chunk.Clear()
 		}
