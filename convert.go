@@ -2,23 +2,23 @@ package sliceutils
 
 import "reflect"
 
-// E is used to convert from Slice[T] to Slice[E]
-type E Value[any]
+// U is used to convert from Slice[T] to Slice[U]
+type U Value[any]
 
-// All functions below make use of E
+// All functions below make use of U
 
 // # Flatten
 //
 // Removes one layer of nested structure.
 //
 //	Slice[Slice[T]]Flatten() return Slice[T]
-func (sl Slice[T]) Flatten() Slice[E] {
-	var result Slice[E]
+func (sl Slice[T]) Flatten() Slice[U] {
+	var result Slice[U]
 	if sl.IsNested() {
 		for _, v := range sl {
 			nestedSlice := reflect.ValueOf(v)
 			for i := 0; i < nestedSlice.Len(); i++ {
-				result = append(result, nestedSlice.Index(i).Interface().(E))
+				result = append(result, nestedSlice.Index(i).Interface().(U))
 			}
 		}
 	} else {
@@ -34,9 +34,9 @@ func (sl Slice[T]) Flatten() Slice[E] {
 // Removes n layers of nested structure.
 //
 //	Slice[Slice[Slice[T]]]FlattenN(2) return Slice[T]
-func (sl Slice[T]) FlattenN(n uint) Slice[E] {
+func (sl Slice[T]) FlattenN(n uint) Slice[U] {
 	if sl.IsNested() && n > 0 {
-		var result Slice[E]
+		var result Slice[U]
 		for _, v := range sl {
 			result.Push(v)
 		}
@@ -51,11 +51,11 @@ func (sl Slice[T]) FlattenN(n uint) Slice[E] {
 //	Removes "all" layers of nested structure.
 //
 //	Slice[Slice[Slice[...]]]FlattenAll() return Slice[T]
-func (sl Slice[T]) FlattenAll() Slice[E] {
+func (sl Slice[T]) FlattenAll() Slice[U] {
 	if sl.IsNested() {
 		return sl.Flatten().FlattenAll()
 	} else {
-		var result Slice[E]
+		var result Slice[U]
 		for _, v := range sl {
 			result.Push(v)
 		}
@@ -63,7 +63,7 @@ func (sl Slice[T]) FlattenAll() Slice[E] {
 	}
 }
 
-func (sl Slice[T]) FlatMap(f func(v T) T) Slice[E] {
+func (sl Slice[T]) FlatMap(f func(v T) T) Slice[U] {
 	mapped := New[T]()
 	for _, v := range sl {
 		mapped.Push(f(v))
@@ -76,8 +76,8 @@ func (sl Slice[T]) FlatMap(f func(v T) T) Slice[E] {
 //	Split the slice based on separator sep.
 //
 //	[1, 2, 3, 4, 5]Split(3) return [[1, 2], [4, 5]]
-func (sl Slice[T]) Split(sep T) Slice[E] {
-	var sp Slice[E]
+func (sl Slice[T]) Split(sep T) Slice[U] {
+	var sp Slice[U]
 	var buf Slice[T]
 	if !sl.Contains(sep) {
 		for _, val := range sl {
@@ -102,11 +102,11 @@ func (sl Slice[T]) Split(sep T) Slice[E] {
 //	Split the slice into n partitions based on separator sep.
 //
 //	[1,3,2,3,4,3,5]SplitN(3, 3) return [[1],[2],[4,3,5]]
-func (sl Slice[T]) SplitN(n uint, sep T) Slice[E] {
+func (sl Slice[T]) SplitN(n uint, sep T) Slice[U] {
 	if n <= 1 || !sl.Contains(sep) {
 		return sl.Split(sep)
 	}
-	var sp Slice[E]
+	var sp Slice[U]
 	var buf Slice[T]
 	for i, value := range sl {
 		if value.Eq(sep) {
@@ -129,7 +129,7 @@ func (sl Slice[T]) SplitN(n uint, sep T) Slice[E] {
 //	Split the slice into two partitions on first occurance of sep.
 //
 //	[1, 3, 2, 3, 4, 5]SplitOnce(3) return [[1], [2, 3, 4, 5]]
-func (sl Slice[T]) SplitOnce(sep T) Slice[E] {
+func (sl Slice[T]) SplitOnce(sep T) Slice[U] {
 	return sl.SplitN(2, sep)
 }
 
@@ -140,8 +140,8 @@ func (sl Slice[T]) SplitOnce(sep T) Slice[E] {
 //		[1,2,3,4,5]SplitBy(func(v T) bool {return v%2==0}) {
 //	 	return [[1], [3], [5]]
 //		}
-func (sl Slice[T]) SplitBy(f func(v T) bool) Slice[E] {
-	var sp Slice[E]
+func (sl Slice[T]) SplitBy(f func(v T) bool) Slice[U] {
+	var sp Slice[U]
 	var buf Slice[T]
 	for _, value := range sl {
 		if f(value) {
@@ -169,14 +169,14 @@ func (sl Slice[T]) SplitBy(f func(v T) bool) Slice[E] {
 // # Caution!
 //
 // Panics if size is 0
-func (sl Slice[T]) Chunk(size uint) Slice[E] {
+func (sl Slice[T]) Chunk(size uint) Slice[U] {
 	if size == 0 {
 		panic("chunk size cannot be 0")
 	}
 	if sl.IsEmpty() {
-		return New[E]()
+		return New[U]()
 	}
-	chunks := New[E]()
+	chunks := New[U]()
 	var chunk Slice[T]
 
 	for i, v := range sl {
@@ -198,12 +198,12 @@ func (sl Slice[T]) Chunk(size uint) Slice[E] {
 // # ChunkBy
 //
 // Create a new slice of non-overlapping chunks by the given function.
-func (sl Slice[T]) ChunkBy(f func(T, T) bool) Slice[E] {
+func (sl Slice[T]) ChunkBy(f func(T, T) bool) Slice[U] {
 	if sl.IsEmpty() {
-		return New[E]()
+		return New[U]()
 	}
 
-	chunks := New[E]()
+	chunks := New[U]()
 	var chunk Slice[T]
 
 	for i, v := range sl {
@@ -233,11 +233,11 @@ func (sl Slice[T]) ChunkBy(f func(T, T) bool) Slice[E] {
 // # Caution!
 //
 // Panics if size is 0
-func (sl Slice[T]) Windows(size uint) Slice[E] {
+func (sl Slice[T]) Windows(size uint) Slice[U] {
 	if size == 0 {
 		panic("size of windows cannot be 0")
 	}
-	var windows Slice[E]
+	var windows Slice[U]
 	if sl.Len() < int(size) {
 		for _, value := range sl {
 			windows.Push(value)
