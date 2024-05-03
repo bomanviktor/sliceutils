@@ -1,5 +1,9 @@
 package sliceutils
 
+// modify
+//
+// Functions for modifying the underlying slice.
+
 // # Clear
 //
 // Remove all the values in the slice but keeps the same type.
@@ -168,8 +172,13 @@ func (sl Slice[T]) SwapValues(v1, v2 T) {
 	}
 }
 
+// # Purge
+//
+// Remove all elements of the slice and return the copy.
+//
+//	[1,2,3]Purge() -> [] and return [1,2,3]
 func (sl *Slice[T]) Purge() Slice[T] {
-	copy := New(*sl...)
+	copy := sl.Copy()
 	*sl = New[T]()
 	return copy
 }
