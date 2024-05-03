@@ -1,8 +1,30 @@
 package sliceutils
 
-// This is the interface you need to implement on your type to be able to put it inside the Slice
+// This is the interface you need to implement on your type to be able to utilize this package
 type Eq[T any] interface {
 	Eq(v T) bool
+}
+
+// Implementation of Eq on Slice[T]
+func (sl Slice[T]) Eq(v any) bool {
+	switch v := v.(type) {
+	case Slice[T]:
+		if len(sl) != len(v) {
+			return false
+		}
+		for i := 0; i < len(sl); i++ {
+			if !sl[i].Eq(v[i]) {
+				return false
+			}
+		}
+		return true
+	default:
+		return false
+	}
+}
+
+func (sl Slice[T]) Ne(v any) bool {
+	return !sl.Eq(v)
 }
 
 // Implementations of Eq on all the builtin types
@@ -16,6 +38,7 @@ func (i Int) Eq(v any) bool {
 		return false
 	}
 }
+
 func (i I8) Eq(v any) bool {
 	switch vt := v.(type) {
 	case I8:
@@ -201,27 +224,4 @@ func (r Rune) Eq(v any) bool {
 	default:
 		return false
 	}
-}
-
-// Implementation of Eq on the slice type
-
-func (sl Slice[T]) Eq(v any) bool {
-	switch v := v.(type) {
-	case Slice[T]:
-		if len(sl) != len(v) {
-			return false
-		}
-		for i := 0; i < len(sl); i++ {
-			if !sl[i].Eq(v[i]) {
-				return false
-			}
-		}
-		return true
-	default:
-		return false
-	}
-}
-
-func (sl Slice[T]) Ne(v any) bool {
-	return !sl.Eq(v)
 }
