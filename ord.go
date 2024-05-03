@@ -1,6 +1,13 @@
 package sliceutils
 
-type Ordering int
+// # Ordering
+//
+// int8 type alias used in Compare, Gt, Lt, Ge and Le
+//
+//	Less = -1
+//	Equal = 0
+//	Greater = 1
+type Ordering int8
 
 const (
 	Less    Ordering = -1
@@ -8,11 +15,21 @@ const (
 	Greater Ordering = 1
 )
 
+// # Ord
+//
+// Interface for ordering of slices. Used for sorting.
 type Ord[T any] interface {
 	Gt(v2 T) bool
 	Lt(v2 T) bool
 }
 
+// # Compare
+//
+// Lexicographically compare one slice with another.
+//
+// https://en.wikipedia.org/wiki/Lexicographic_order
+//
+// Returns Ordering.
 func (sl Slice[T]) Compare(other Slice[T]) Ordering {
 	if sl.IsEmpty() && other.IsEmpty() {
 		return Equal
@@ -39,6 +56,9 @@ func (sl Slice[T]) Compare(other Slice[T]) Ordering {
 	return Equal
 }
 
+// # Gt
+//
+// Returns true if slice is lexographically greater than other
 func (sl Slice[T]) Gt(other any) bool {
 	switch other := other.(type) {
 	case Slice[T]:
@@ -48,6 +68,9 @@ func (sl Slice[T]) Gt(other any) bool {
 	}
 }
 
+// # Lt
+//
+// Returns true if slice is lexographically lesser than other
 func (sl Slice[T]) Lt(other any) bool {
 	switch other := other.(type) {
 	case Slice[T]:
@@ -57,6 +80,9 @@ func (sl Slice[T]) Lt(other any) bool {
 	}
 }
 
+// # Ge
+//
+// Returns true if slice is not lexographically lesser than other
 func (sl Slice[T]) Ge(other any) bool {
 	switch other := other.(type) {
 	case Slice[T]:
@@ -66,6 +92,9 @@ func (sl Slice[T]) Ge(other any) bool {
 	}
 }
 
+// # Le
+//
+// Returns true if slice is not lexographically greater than other
 func (sl Slice[T]) Le(other any) bool {
 	switch other := other.(type) {
 	case Slice[T]:
@@ -74,6 +103,8 @@ func (sl Slice[T]) Le(other any) bool {
 		return false
 	}
 }
+
+// Gt and Lt implementations for all builtin types
 
 func (v Int) Gt(v2 any) bool {
 	switch vt := v2.(type) {
